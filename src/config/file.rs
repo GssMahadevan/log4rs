@@ -9,6 +9,9 @@ use thiserror::Error;
 
 use super::{init_config, Config, Deserializers, Handle, RawConfig};
 use crate::handle_error;
+use std::borrow::Cow;
+use std::env;
+use regex::{Regex,Captures};
 
 /// Initializes the global logger as a log4rs logger configured via a file.
 ///
@@ -140,8 +143,27 @@ impl Format {
 
 fn read_config(path: &Path) -> anyhow::Result<String> {
     let s = fs::read_to_string(path)?;
-    Ok(s)
+
+    fn expand_var(raw_config: &str) -> Cow<str> {
+
+        let re = Regex::new(r"\$\{([a-zA-Z_][0-9a-zA-Z_]*)\}").unwrap();
+        re.replace_all(&raw_config, |caps: &Captures| {
+            match env::var(&caps[1]) {
+                Ok(val) => {
+                    eprintln!("Changing  {} to {}", &caps[1],val);
+                    val},
+                Err(e) => {
+                    eprintln!("Not Changing  {} to {}", &caps[1],e);
+                    (&caps[0]).to_string()
+                },
+            }
+        })
+    }
+    
+    Ok(expand_var(&s).into_owned())
 }
+
+
 
 fn deserialize(config: &RawConfig, deserializers: &Deserializers) -> Config {
     let (appenders, mut errors) = config.appenders_lossy(deserializers);
