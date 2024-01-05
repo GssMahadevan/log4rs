@@ -150,10 +150,10 @@ fn read_config(path: &Path) -> anyhow::Result<String> {
         re.replace_all(&raw_config, |caps: &Captures| {
             match env::var(&caps[1]) {
                 Ok(val) => {
-                    eprintln!("Changing  {} to {}", &caps[1],val);
+                    // eprintln!("Changing  {} to {}", &caps[1],val);
                     val},
                 Err(e) => {
-                    eprintln!("Not Changing  {} to {}", &caps[1],e);
+                    // eprintln!("Not Changing  {} to {}", &caps[1],e);
                     (&caps[0]).to_string()
                 },
             }
